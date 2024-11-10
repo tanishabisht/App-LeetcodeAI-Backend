@@ -104,6 +104,10 @@ def get_hint(problem_statement, user_code, previous_hints=None):
 
 # api endpoints
 
+@app.get("/")
+async def check():
+    return {"status": "success"}
+
 @app.post("/executeCode")
 async def execute_code_api(request: CodeExecutionRequest):
     output = run_python_code(request.code)
