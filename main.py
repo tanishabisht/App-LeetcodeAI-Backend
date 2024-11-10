@@ -65,13 +65,16 @@ def get_hint(problem_statement, user_code, previous_hints=None):
         - **Problem Statement:** {problem_statement}
         - **User Code:** {user_code}
 
-        **Goal:** Provide a clear, actionable hint that guides the user toward a more effective solution based on their current code. 
+        **Goal:** Provide one clear, actionable hint that guides the user toward a more effective solution based on their current code. 
 
         ### Hint Generation Instructions:
         - **Clarity and Brevity:** Each hint should be concise (under 100 characters), easy to understand, and focused on a single actionable step.
         - **Progressive Guidance:** Build on previous hints to guide the user through sequential improvements. Avoid repeating advice.
+        - **Single Hint Delivery:** Only deliver one hint at a time, ensuring that each suggestion is unique and directly relevant to the next logical improvement.
+        - **Direct Delivery:** Provide the hint directly without prefixes such as "Hint 1:"; simply give the advice.
+        - **Beginner-Friendly Algorithms:** Recommend optimizations that are simple and beginner-friendly. Avoid complex or advanced algorithms (e.g., avoid Kadane’s algorithm); focus instead on commonly understood techniques or basic algorithm adjustments.
         - **Code Optimization Focus:** Only suggest performance improvements if applicable; otherwise, explicitly state, "No further improvements are necessary."
-        - If a specific optimization is feasible, recommend precise actions, such as data structure changes or algorithmic adjustments, to enhance efficiency.
+        - If a specific optimization is feasible, recommend precise actions, such as data structure changes or simple algorithm adjustments, to enhance efficiency.
         """
     )
 
