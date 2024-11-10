@@ -10,14 +10,20 @@ openai.api_key = os.getenv('API_KEY')
 
 app = FastAPI()
 
-# Allow CORS for your frontend's origin (localhost:3000 for example)
+
+
+# middleware - allow CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Adjust to the frontend's URL
+    allow_origins=["http://localhost:3000"],  # adjust to the frontend's URL
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all HTTP methods
-    allow_headers=["*"],  # Allow all headers
+    allow_methods=["*"], 
+    allow_headers=["*"], 
 )
+
+
+
+# helper - objects
 
 class CodeExecutionRequest(BaseModel):
     code: str
@@ -32,105 +38,92 @@ class HintRequest(BaseModel):
     hint_type: str = "logic"
     previous_hints: list = None
 
+
+
+# helper - functions
+
 def run_python_code(code: str) -> str:
     try:
-        # Run the code using subprocess in a sandboxed environment
         result = subprocess.run(
             [sys.executable, "-c", code],
             capture_output=True,
             text=True,
-            timeout=5  # Limit execution time
+            timeout=5 
         )
-        print(result)
         return result.stdout if result.returncode == 0 else result.stderr
     except subprocess.TimeoutExpired:
         return "Error: Code execution timed out."
     except Exception as e:
         return f"Error: {str(e)}"
 
-@app.post("/executeCode")
-async def execute_code(request: CodeExecutionRequest):
-    output = run_python_code(request.code)
-    return {"output": output}
-
-@app.post("/runTestCase")
-async def run_test_case(request: TestCaseRequest):
-    # Inject test input into code by using input() replacements
-    code_with_input = f"""
-        import sys
-        from io import StringIO
-        sys.stdin = StringIO('{request.test_input}')
-        {request.code}
-    """
-    output = run_python_code(code_with_input)
-    return {"output": output}
-
-def get_hint_new_code(problem_statement, user_code, hint_type="logic", previous_hints=None):
+def get_hint(problem_statement, user_code, previous_hints=None):
     base_prompt = (
         f"""
-        Problem Statement:
-        {problem_statement}
+        **Generating Progressive Hints for Code Improvement**
 
-        User Code:
-        {user_code}
+        **Context:**
+        - **Problem Statement:** {problem_statement}
+        - **User Code:** {user_code}
 
-        Objective: Generate one clear, actionable hint based on the current user code.
-        - The hint should address the {hint_type} of the code.
-        - Use simple, direct language that is easy to understand and within 100 characters.
-        - Build on previous hints (if any) to guide the user progressively towards an improved solution.
-        - Each new hint should be unique and address the next logical improvement, avoiding repetition.
+        **Goal:** Provide a clear, actionable hint that guides the user toward a more effective solution based on their current code. 
+
+        ### Hint Generation Instructions:
+        - **Clarity and Brevity:** Each hint should be concise (under 100 characters), easy to understand, and focused on a single actionable step.
+        - **Progressive Guidance:** Build on previous hints to guide the user through sequential improvements. Avoid repeating advice.
+        - **Code Optimization Focus:** Only suggest performance improvements if applicable; otherwise, explicitly state, "No further improvements are necessary."
+        - If a specific optimization is feasible, recommend precise actions, such as data structure changes or algorithmic adjustments, to enhance efficiency.
         """
     )
 
     if previous_hints:
         base_prompt += f"""
-        Previous Hints:
-        {'; '.join(previous_hints)}
-        Hint Guidelines:
-        - Avoid redundancy: Each hint should be a distinct step forward, building on previous hints.
-        - Reference previous hints to ensure progression, helping the user advance without revisiting the same advice.
+        **Context:** 
+        - **Previous Hints Provided:** {'; '.join(previous_hints)}
+
+        ### Guidelines for Effective Hint Creation:
+        1. **Avoid Redundancy:** Ensure each hint adds new insight without revisiting prior suggestions.
+        2. **Leverage Past Hints:** Reference previous hints to create a coherent improvement trajectory.
+        3. **Focus on Next Steps:** Target the immediate logical improvement that progresses the user toward a refined solution.
         """
-
-    if hint_type == "logic":
-        prompt = base_prompt + (
-            """
-            Hint Type: Logic Improvement
-            - Provide a logical refinement to guide the user toward a clearer or more accurate solution.
-            - Focus on one specific aspect of the code, suggesting a concrete way to improve clarity, correctness, or structure.
-            - Avoid general advice: be precise, referencing specific lines or sections where possible.
-            """
-        )
-
-    elif hint_type == "optimization":
-        prompt = base_prompt + (
-            """
-            Hint Type: Optimization
-            - Evaluate the code’s current efficiency and give hint only if it is possible to improve it.
-            - If no time optimizations are required, clearly state "No further improvements are necessary."
-            - For non-optimal code, suggest a specific change that would enhance time efficiency (like: recommend relevant data structures, algorithm adjustments)
-            """
-        )
-    else:
-        raise ValueError("Invalid hint_type. Choose 'logic' or 'optimization'.")
 
     response = openai.ChatCompletion.create(
         model="gpt-4",
         messages=[
             {"role": "system", "content": "You are a helpful coding assistant. Always progress logically from prior hints."},
-            {"role": "user", "content": prompt}
+            {"role": "user", "content": base_prompt}
         ],
         max_tokens=100
     )
 
     return response.choices[0].message.content.strip()
 
+
+
+# api endpoints
+
+@app.post("/executeCode")
+async def execute_code_api(request: CodeExecutionRequest):
+    output = run_python_code(request.code)
+    return {"output": output}
+
+# @app.post("/runTestCase")
+# async def run_test_case_api(request: TestCaseRequest):
+#     # Inject test input into code by using input() replacements
+#     code_with_input = f"""
+#         import sys
+#         from io import StringIO
+#         sys.stdin = StringIO('{request.test_input}')
+#         {request.code}
+#     """
+#     output = run_python_code(code_with_input)
+#     return {"output": output}
+
 @app.post("/getHint")
-async def get_hint(request: HintRequest):
+async def get_hint_api(request: HintRequest):
     try:
-        hint = get_hint_new_code(
+        hint = get_hint(
             problem_statement=request.problem_statement,
             user_code=request.user_code,
-            hint_type=request.hint_type,
             previous_hints=request.previous_hints
         )
         return {"hint": hint}
