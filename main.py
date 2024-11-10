@@ -113,18 +113,6 @@ async def execute_code_api(request: CodeExecutionRequest):
     output = run_python_code(request.code)
     return {"output": output}
 
-# @app.post("/runTestCase")
-# async def run_test_case_api(request: TestCaseRequest):
-#     # Inject test input into code by using input() replacements
-#     code_with_input = f"""
-#         import sys
-#         from io import StringIO
-#         sys.stdin = StringIO('{request.test_input}')
-#         {request.code}
-#     """
-#     output = run_python_code(code_with_input)
-#     return {"output": output}
-
 @app.post("/getHint")
 async def get_hint_api(request: HintRequest):
     try:
