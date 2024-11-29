@@ -8,6 +8,11 @@ import os
 
 openai.api_key = os.getenv('API_KEY')
 
+if os.getenv('API_KEY') is None:
+    print("API_KEY is not set!")
+else:
+    print(f"API_KEY: {os.getenv('API_KEY')}")
+
 app = FastAPI()
 
 
