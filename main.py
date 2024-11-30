@@ -111,7 +111,7 @@ def get_hint(problem_statement, user_code, previous_hints=None):
 
 @app.get("/")
 async def check():
-    return {"status": "success"}
+    return {"status": "success", "api-key": os.getenv('API_KEY')}
 
 @app.post("/executeCode")
 async def execute_code_api(request: CodeExecutionRequest):
