@@ -8,14 +8,7 @@ import os
 
 openai.api_key = os.getenv('API_KEY')
 
-if os.getenv('API_KEY') is None:
-    print("API_KEY is not set!")
-else:
-    print(f"API_KEY: {os.getenv('API_KEY')}")
-
 app = FastAPI()
-
-
 
 # middleware - allow CORS
 app.add_middleware(
@@ -111,7 +104,7 @@ def get_hint(problem_statement, user_code, previous_hints=None):
 
 @app.get("/")
 async def check():
-    return {"status": "success", "api-key": os.getenv('API_KEY')}
+    return {"status": "success"}
 
 @app.post("/executeCode")
 async def execute_code_api(request: CodeExecutionRequest):
