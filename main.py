@@ -91,7 +91,7 @@ def get_hint(problem_statement, user_code, previous_hints=None):
         """
 
     response = openai.ChatCompletion.create(
-        model="gpt-4",
+        model="gpt-4o",
         messages=[
             {"role": "system", "content": "You are a helpful coding assistant. Always progress logically from prior hints."},
             {"role": "user", "content": base_prompt}
